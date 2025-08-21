@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globe Planner - Explore the World</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/globe.gl"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --dark-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --text-light: #e0e6ed;
+      --accent-blue: #00d4ff;
+      --accent-purple: #8b5cf6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--dark-gradient);
+      min-height: 100vh;
+      color: var(--text-light);
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Animated background particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+    }
+
+    /* Header styling */
+    .header {
+      position: relative;
+      z-index: 10;
+      padding: 2rem 0;
+      text-align: center;
+    }
+
+    .main-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3)); }
+      to { filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.5)); }
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      color: var(--text-light);
+      opacity: 0.8;
+      font-weight: 300;
+    }
+
+    /* Glass morphism form */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+      padding: 2rem;
+      margin: 2rem auto;
+      max-width: 800px;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+      animation: shimmer 2s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 0.5rem;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .input-group-text {
+      background: transparent;
+      border: none;
+      color: var(--accent-blue);
+      padding: 0.5rem;
+    }
+
+    .form-control {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      padding: 0.5rem;
+      font-size: 1rem;
+      flex: 1;
+      outline: none;
+    }
+
+    .form-control::placeholder {
+      color: rgba(224, 230, 237, 0.7);
+    }
+
+    .btn-custom {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border: none;
+      border-radius: 15px;
+      padding: 1rem 2rem;
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-custom::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-custom:hover::before {
+      left: 100%;
+    }
+
+    .btn-custom:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 212, 255, 0.4);
+    }
+
+    /* Globe section */
+    .globe-section {
+      position: relative;
+      z-index: 10;
+      margin-top: 3rem;
+    }
+
+    .globe-container {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 25px;
+      padding: 2rem;
+      box-shadow: 0 15px 35px rgba(31, 38, 135, 0.37);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #globeViz {
+      width: 100%;
+      height: 600px;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Info cards */
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .info-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: 15px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .info-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+    }
+
+    .info-icon {
+      color: var(--accent-blue);
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .error-message {
+      background: rgba(255, 77, 77, 0.1);
+      border: 1px solid rgba(255, 77, 77, 0.3);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+      color: #ff6b6b;
+      display: none;
+    }
+
+    .success-message {
+      background: rgba(77, 255, 77, 0.1);
+      border: 1px solid rgba(77, 255, 77, 0.3);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+      color: #4ade80;
+      display: none;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .main-title {
+        font-size: 2.5rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      #globeViz {
+        height: 400px;
+      }
+      
+      .form-row {
+        flex-direction: column;
+      }
+      
+      .input-group {
+        min-width: 100%;
+      }
+      
+      .btn-custom {
+        width: 100%;
+        margin-top: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated background particles -->
+  <div class="particles" id="particles"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="main-title">
+        We Plan. You Stay
+      </h1>
+      <p class="subtitle">Explore the world and plan your perfect journey</p>
+    </div>
+
+    <!-- Form Section -->
+    <div class="glass-card">
+      <form method="POST" id="routeForm">
+        {% csrf_token %}
+        <div class="form-row">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-map-marker-alt"></i>
+            </span>
+            <input type="text" name="source_city" class="form-control" placeholder="Departure City (e.g., New York)" value="{{ source|default:'' }}" required>
+          </div>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-flag-checkered"></i>
+            </span>
+            <input type="text" name="destination_city" class="form-control" placeholder="Destination City (e.g., London)" value="{{ destination|default:'' }}" required>
+          </div>
+          <button type="submit" class="btn-custom">
+            <i class="fas fa-route"></i>
+            Plot Route
+          </button>
+        </div>
+      </form>
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+    </div>
+
+    <!-- Globe Section -->
+    <div class="globe-section">
+      <div class="globe-container">
+        <div id="globeViz"></div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-cards">
+      <div class="info-card">
+        <i class="fas fa-plane info-icon"></i>
+        <h5>Flight Routes</h5>
+        <p>Visualize flight paths between cities with animated arcs on our interactive 3D globe.</p>
+      </div>
+      <div class="info-card">
+        <i class="fas fa-map-marked-alt info-icon"></i>
+        <h5>Global Coverage</h5>
+        <p>Explore connections between thousands of cities worldwide with real-time geographical data.</p>
+      </div>
+      <div class="info-card">
+        <i class="fas fa-rocket info-icon"></i>
+        <h5>Interactive Experience</h5>
+        <p>Rotate, zoom, and explore the globe with smooth 3D interactions and stunning visuals.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let world;
+    
+    // Create animated background particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 50;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+    
+    createParticles();
+
+    // Initialize globe immediately (no loading spinner)
+    function initGlobe() {
+      try {
+        world = Globe()
+          (document.getElementById('globeViz'))
+          .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+          .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+          .showAtmosphere(true)
+          .atmosphereColor('#00d4ff')
+          .atmosphereAltitude(0.15)
+          .backgroundColor('rgba(0,0,0,0)')
+          .polygonsData([])
+          .pointOfView({ lat: 20, lng: 0, altitude: 2.5 });
+
+        // Auto-rotate globe
+        world.controls().autoRotate = true;
+        world.controls().autoRotateSpeed = 0.5;
+
+        // Load countries with enhanced styling
+        fetch('https://unpkg.com/world-atlas/countries-110m.json')
+          .then(res => res.json())
+          .then(countries => {
+            const countriesGeo = topojson.feature(countries, countries.objects.countries).features;
+            world
+              .polygonsData(countriesGeo)
+              .polygonCapColor(() => 'rgba(0, 212, 255, 0.15)')
+              .polygonSideColor(() => 'rgba(0, 212, 255, 0.05)')
+              .polygonStrokeColor(() => '#00d4ff')
+              .polygonAltitude(0.01);
+          })
+          .catch(err => {
+            console.warn('Could not load country data:', err);
+          });
+
+        // If we have coordinates from Django, plot the route
+        {% if source_lat and source_lng and dest_lat and dest_lng %}
+          plotRouteFromDjango();
+        {% endif %}
+
+      } catch (error) {
+        document.getElementById('globeViz').innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #ff6b6b;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <p>Failed to load 3D globe</p>
+            <p style="font-size: 0.9rem; opacity: 0.7;">Check your internet connection and try refreshing the page</p>
+          </div>
+        `;
+        console.error('Globe initialization error:', error);
+      }
+    }
+
+    // Plot route using coordinates from Django
+    function plotRouteFromDjango() {
+      const source = {
+        lat: {{ source_lat|default:"null" }},
+        lng: {{ source_lng|default:"null" }},
+        name: "{{ source|default:"" }}"
+      };
+      
+      const dest = {
+        lat: {{ dest_lat|default:"null" }},
+        lng: {{ dest_lng|default:"null" }},
+        name: "{{ destination|default:"" }}"
+      };
+
+      if (source.lat && source.lng && dest.lat && dest.lng && world) {
+        // Stop auto-rotation when route is plotted
+        world.controls().autoRotate = false;
+        
+        // Draw enhanced arc
+        world.arcsData([
+          {
+            startLat: source.lat, 
+            startLng: source.lng,
+            endLat: dest.lat, 
+            endLng: dest.lng
+          }
+        ])
+        .arcColor(() => ['#ff6b6b', '#4ecdc4', '#45b7d1'])
+        .arcDashLength(0.3)
+        .arcDashGap(0.1)
+        .arcDashAnimateTime(2000)
+        .arcStroke(3)
+        .arcAltitude(0.3);
+
+        // Add enhanced pins
+        world
+          .pointsData([source, dest])
+          .pointLat(d => d.lat)
+          .pointLng(d => d.lng)
+          .pointAltitude(0.1)
+          .pointRadius(0.3)
+          .pointColor(() => '#ffd700')
+          .pointLabel(d => `<div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 8px; color: white; font-family: Poppins;">${d.name}</div>`);
+
+        // Focus on the route
+        setTimeout(() => {
+          const midLat = (source.lat + dest.lat) / 2;
+          const midLng = (source.lng + dest.lng) / 2;
+          world.pointOfView({ lat: midLat, lng: midLng, altitude: 1.5 }, 2000);
+        }, 1000);
+
+        // Show success message
+        const successDiv = document.getElementById('successMessage');
+        successDiv.textContent = `Route plotted from ${source.name} to ${dest.name}`;
+        successDiv.style.display = 'block';
+      } else if ((source.lat === null || dest.lat === null) && "{{ source }}" && "{{ destination }}") {
+        // Show error if coordinates couldn't be found
+        const errorDiv = document.getElementById('errorMessage');
+        let errorMsg = 'Could not find coordinates for: ';
+        if (source.lat === null) errorMsg += `"{{ source }}"`;
+        if (source.lat === null && dest.lat === null) errorMsg += ' and ';
+        if (dest.lat === null) errorMsg += `"{{ destination }}"`;
+        errorDiv.textContent = errorMsg;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    // Initialize globe immediately
+    initGlobe();
+  </script>
+</body>
+</html>
