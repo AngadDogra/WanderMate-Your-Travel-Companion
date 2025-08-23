@@ -1,2 +1,3 @@
 django
 opencage
+psycopg2-binary
