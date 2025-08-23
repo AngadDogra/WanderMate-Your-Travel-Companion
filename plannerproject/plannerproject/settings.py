@@ -75,8 +75,12 @@ WSGI_APPLICATION = 'plannerproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'wander-mate-database',       # same as POSTGRES_DB
+        'USER': 'user',           # same as POSTGRES_USER
+        'PASSWORD': 'password',   # same as POSTGRES_PASSWORD
+        'HOST': 'localhost',        # or container name if using docker-compose
+        'PORT': '5432',  
     }
 }
 

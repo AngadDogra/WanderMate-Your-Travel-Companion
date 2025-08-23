@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from opencage.geocoder import OpenCageGeocode
 
+# isko please .env main daal dena
 key = "9a88f993bb9844fa96a0c3333931caae"
 geocoder = OpenCageGeocode(key)
 
