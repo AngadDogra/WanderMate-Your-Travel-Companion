@@ -1,0 +1,65 @@
+{% extends 'globe/base.html' %}
+
+{% block title %}Login - Globe Planner{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <h2 style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem;">
+      Welcome Back
+    </h2>
+    <p style="color: var(--text-light); opacity: 0.8;">Sign in to continue your journey</p>
+  </div>
+  
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}">
+          {% if field.name == 'username' %}
+            <i class="fas fa-user"></i> Username
+          {% elif field.name == 'password' %}
+            <i class="fas fa-lock"></i> Password
+          {% else %}
+            {{ field.label }}
+          {% endif %}
+        </label>
+        <input type="{{ field.field.widget.input_type }}" 
+               name="{{ field.name }}" 
+               class="form-control" 
+               id="{{ field.id_for_label }}"
+               placeholder="{% if field.name == 'username' %}Enter your username{% elif field.name == 'password' %}Enter your password{% endif %}"
+               {% if field.field.required %}required{% endif %}>
+        {% if field.help_text %}
+          <div class="help-text">{{ field.help_text }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    
+    {% if form.errors %}
+      <div class="form-messages">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 10px; padding: 0.8rem; margin-bottom: 0.5rem; color: #ff6b6b;">
+              {{ error }}
+            </div>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <div style="background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 10px; padding: 0.8rem; margin-bottom: 0.5rem; color: #ff6b6b;">
+            {{ error }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <button type="submit" class="btn-custom">
+      <i class="fas fa-sign-in-alt"></i> Sign In
+    </button>
+  </form>
+  
+  <a href="{% url 'signup' %}" class="auth-link">
+    Don't have an account? <strong>Create one here</strong>
+  </a>
+</div>
+{% endblock %}
