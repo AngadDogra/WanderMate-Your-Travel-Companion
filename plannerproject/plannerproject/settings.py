@@ -9,8 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,6 +131,18 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# API's and Redirects
+load_dotenv(BASE_DIR / '.env')
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+AMADEUS_API_KEY = os.environ.get('AMADEUS_API_KEY')
+AMADEUS_API_SECRET = os.environ.get('AMADEUS_API_SECRET')
+
+if not AMADEUS_API_KEY or not AMADEUS_API_SECRET:
+    raise ImproperlyConfigured(
+        "Amadeus API credentials are required. "
+        "Please set AMADEUS_API_KEY and AMADEUS_API_SECRET environment variables."
+    )
+OPENCAGE_API_KEY = os.environ.get('OPENCAGE_API_KEY')
