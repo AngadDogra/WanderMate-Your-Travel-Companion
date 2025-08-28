@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+"""one small step for fuzzy wuzzy, one giant leap for jites(h)"""
 import os
 import sys
 
