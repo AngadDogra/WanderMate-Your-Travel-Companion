@@ -626,6 +626,26 @@
       <!-- </div>
     </div> -->
 
+    {% if attractions %}
+      <h3 class="mt-4">Top Attractions in {{ destination }}</h3>
+      <ul>
+      {% for place in attractions %}
+        <li>
+          <strong>{{ place.name }}</strong><br>
+          {{ place.formatted_address }}<br>
+          ⭐ {{ place.rating }}/5 ({{ place.user_ratings_total }} reviews)
+        </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if itinerary %}
+      <section class="itinerary">
+          <h2>Suggested Itinerary for {{ destination }}</h2>
+          <pre style="white-space: pre-wrap;"><h4 style="font-weight: bold; font-family: Poppins, sans-serif;">{{ itinerary }}</h4></pre>
+      </section>
+    {% endif %}
+
     <!-- Info Cards -->
     <div class="info-cards">
       <div class="info-card">
