@@ -139,7 +139,8 @@ LOGOUT_REDIRECT_URL = '/'
 
 AMADEUS_API_KEY = os.environ.get('AMADEUS_API_KEY')
 AMADEUS_API_SECRET = os.environ.get('AMADEUS_API_SECRET')
-
+GOOGLE_PLACES_API_KEY = os.environ.get('GOOGLE_PLACES_API_KEY')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 if not AMADEUS_API_KEY or not AMADEUS_API_SECRET:
     raise ImproperlyConfigured(
         "Amadeus API credentials are required. "
