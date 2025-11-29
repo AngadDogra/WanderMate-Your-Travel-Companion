@@ -6,8 +6,39 @@ from django.contrib.auth.views import LoginView, LogoutView
 import requests
 from plannerproject import settings
 from datetime import datetime, timedelta
+import os
+import google.generativeai as genai
+import re
 
 geocoder = OpenCageGeocode(settings.OPENCAGE_API_KEY)
+
+def generate_itinerary(dest, attractions):
+    itinerary = None
+    try:
+        # Configure Gemini API
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+        # Prepare prompt
+        attractions_list = ", ".join([a["name"] for a in attractions]) if attractions else "None"
+
+        prompt = (
+            f"Create a 3-day travel itinerary for a trip to {dest}. "
+            f"The top attractions are: {attractions_list}. "
+            f"Organize by Day 1, Day 2, and Day 3, with morning, afternoon, and evening plans. "
+            f"Keep the tone friendly and concise."
+        )
+
+        # Generate text with Gemini
+        model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        response = model.generate_content(prompt)
+
+        itinerary = response.text.strip()
+        itinerary_cleaned = re.sub(r"\*\*(.*?)\*\*", r"\1", itinerary)
+
+    except Exception as e:
+        itinerary = f"Could not generate itinerary: {str(e)}"
+
+    return itinerary_cleaned
 
 def get_amadeus_token():
     """Get access token from Amadeus API"""
@@ -90,7 +121,7 @@ def search_flights(origin_code, destination_code, departure_date, access_token, 
         'departureDate': departure_date,
         'adults': adults,
         'currencyCode': 'INR',
-        'max': 2  
+        'max': 5
     }
     
     try:
@@ -105,6 +136,24 @@ def search_flights(origin_code, destination_code, departure_date, access_token, 
     except Exception as e:
         print(f"Error searching flights: {e}")
     return None
+
+def get_google_places(city_name):
+    """Fetch top attractions for a given city using Google Places API."""
+    url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    params = {
+        "query": f"top attractions in {city_name}",
+        "key": os.getenv("GOOGLE_PLACES_API_KEY")
+    }
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("results", [])
+        else:
+            print(f"Google Places error: {response.text}")
+    except Exception as e:
+        print(f"Error fetching Google Places data: {e}")
+    return []
 
 def get_coords(city_name):
     result = geocoder.geocode(city_name)
@@ -179,9 +228,15 @@ def home(request):
                 error_message = f"Could not find airport codes. Origin: {origin_code}, Destination: {destination_code}"
         else:
             error_message = "Unable to connect to flight search service."
+        
+                # Fetch attractions
+        attractions = get_google_places(dest)
 
+        itinerary = generate_itinerary(dest, attractions)
+        
         context = {
-            "source": source,
+            "source": source, 
+            
             "destination": dest,
             "departure_date": departure_date,
             "source_lat": source_lat,
@@ -189,7 +244,9 @@ def home(request):
             "dest_lat": dest_lat,
             "dest_lng": dest_lng,
             "flights": flights_data,
-            "error_message": error_message
+            "error_message": error_message,
+            "attractions": attractions,
+            "itinerary": itinerary
         }
 
     return render(request, "globe/home.html", context)
@@ -213,3 +270,5 @@ class CustomLoginView(LoginView):
 # Logout view
 class CustomLogoutView(LogoutView):
     next_page = "home"  # redirect after logout using URL name
+
+
