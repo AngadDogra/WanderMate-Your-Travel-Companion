@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            margin: 2cm;
+            size: A4;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #e0f2fe;
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #0284c7;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 5px 0;
+            color: #475569;
+            font-size: 14px;
+        }
+        
+        .day {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            page-break-inside: avoid;
+        }
+        
+        .day-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        
+        .day-number {
+            width: 50px;
+            height: 50px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .day-title {
+            color: #0284c7;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .time-block {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #0284c7;
+            background: #f8fafc;
+        }
+        
+        .time-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .time-content {
+            padding-left: 20px;
+            color: #334155;
+        }
+        
+        .activity {
+            margin: 12px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .activity:before {
+            content: "•";
+            position: absolute;
+            left: 10px;
+            color: #3b82f6;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ destination }} - {{ num_days }} Day Itinerary</h1>
+        <p>{{ departure_date|date:"F d, Y" }} to {{ return_date|date:"F d, Y" }}</p>
+        <p>Your Personalized Journey</p>
+    </div>
+    
+    {% for day_data in parsed_itinerary %}
+    <div class="day">
+        <div class="day-header">
+            <div class="day-number">{{ day_data.day_num }}</div>
+            <h2 class="day-title">Day {{ day_data.day_num }}{% if day_data.title %}: {{ day_data.title }}{% endif %}</h2>
+        </div>
+        
+        {% for time_block in day_data.times %}
+        <div class="time-block">
+            <div class="time-header">{{ time_block.time }}</div>
+            <div class="time-content">
+                {% for item in time_block.items %}
+                    {% if item.type == 'activity' %}
+                        <div class="activity">{{ item.content }}</div>
+                    {% else %}
+                        <p>{{ item.content }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</body>
+</html>
